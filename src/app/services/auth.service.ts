@@ -1,26 +1,35 @@
 import { Injectable } from '@angular/core';
-import { Auth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, GoogleAuthProvider, signInWithPopup } from '@angular/fire/auth';
+import { Auth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, signOut, User } from 'firebase/auth';
+import { auth } from '../configuration/firebbase-config';
+import { BehaviorSubject } from 'rxjs';
 
 @Injectable({
   providedIn: 'root'
 })
 export class AuthService {
-  constructor(private auth: Auth) {}
+  private userSubject = new BehaviorSubject<User | null>(null);
+  user$ = this.userSubject.asObservable();
 
-  login(email: string, password: string) {
-    return signInWithEmailAndPassword(this.auth, email, password);
+  constructor() {
+    auth.onAuthStateChanged(user => {
+      this.userSubject.next(user);
+    });
   }
 
-  register(email: string, password: string) {
-    return createUserWithEmailAndPassword(this.auth, email, password);
+  async register(email: string, password: string): Promise<void> {
+    await createUserWithEmailAndPassword(auth, email, password);
   }
 
-  logout() {
-    return signOut(this.auth);
+  async login(email: string, password: string): Promise<void> {
+    await signInWithEmailAndPassword(auth, email, password);
   }
 
-  googleSignIn() {
+  async googleSignIn(): Promise<void> {
     const provider = new GoogleAuthProvider();
-    return signInWithPopup(this.auth, provider);
+    await signInWithPopup(auth, provider);
+  }
+
+  async logout(): Promise<void> {
+    await signOut(auth);
   }
 }
